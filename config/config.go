@@ -41,17 +41,19 @@ type PostgresqlConfig struct {
 }
 
 type Config struct {
-	MQ          messageimpl.Config     `json:"mq"             required:"true"`
-	Middleware  middleware.Config      `json:"middleware"     required:"true"`
-	Postgresql  PostgresqlConfig       `json:"postgresql"     required:"true"`
-	Maintainer  maintainerimpl.Config  `json:"maintainer"     required:"true"`
-	SoftwarePkg dp.Config              `json:"software_pkg"   required:"true"`
-	Translation translationimpl.Config `json:"translation"    required:"true"`
+	MQ          messageimpl.Config       `json:"mq"             required:"true"`
+	Limiter     middleware.LimiterConfig `json:"limiter"        required:"true"`
+	Middleware  middleware.Config        `json:"middleware"     required:"true"`
+	Postgresql  PostgresqlConfig         `json:"postgresql"     required:"true"`
+	Maintainer  maintainerimpl.Config    `json:"maintainer"     required:"true"`
+	SoftwarePkg dp.Config                `json:"software_pkg"   required:"true"`
+	Translation translationimpl.Config   `json:"translation"    required:"true"`
 }
 
 func (cfg *Config) configItems() []interface{} {
 	return []interface{}{
 		&cfg.MQ,
+		&cfg.Limiter,
 		&cfg.Middleware,
 		&cfg.Postgresql.DB,
 		&cfg.Postgresql.Config,
