@@ -67,9 +67,7 @@ func (s *service) Translate(content string, l dp.Language) (string, error) {
 		return "", err
 	}
 
-	if v.ErrorMsg != nil {
-		err = errors.New(*v.ErrorMsg)
-
+	if err = s.checkErrorMag(v.ErrorMsg); err != nil {
 		return "", err
 	}
 
@@ -78,4 +76,31 @@ func (s *service) Translate(content string, l dp.Language) (string, error) {
 	}
 
 	return "", errors.New("no translated text")
+}
+
+func (s *service) checkErrorMag(msg *string) (err error) {
+	if msg != nil {
+		err = errors.New(*msg)
+	}
+
+	return
+}
+
+func (s *service) LanguageDetection(content string) (string, error) {
+	req := model.LanguageDetectionReq{Text: content}
+
+	v, err := s.cli.RunLanguageDetection(&model.RunLanguageDetectionRequest{Body: &req})
+	if err != nil {
+		return "", err
+	}
+
+	if err = s.checkErrorMag(v.ErrorMsg); err != nil {
+		return "", err
+	}
+
+	if v.DetectedLanguage != nil {
+		return *v.DetectedLanguage, nil
+	}
+
+	return "", errors.New("no match language type")
 }
