@@ -21,23 +21,20 @@ type LimiterConfig struct {
 	Limit float64 `json:"limit"  required:"true"`
 }
 
-var l *ipRateLimiter
+func (l *LimiterConfig) SetDefault() {
+	if l.Burst <= 0 {
+		l.Burst = 3
+	}
 
-func newIPRateLimiter(r rate.Limit, burst int) *ipRateLimiter {
-	return &ipRateLimiter{
-		ips:   make(map[string]*rate.Limiter),
-		mu:    &sync.RWMutex{},
-		limit: r,
-		burst: burst,
+	if l.Limit <= 0.0 {
+		l.Limit = 0.05
 	}
 }
 
-func InitLimiter(cfg *LimiterConfig) {
-	l = newIPRateLimiter(rate.Limit(cfg.Limit), cfg.Burst)
-}
+var limiterInstance *ipRateLimiter
 
 func IpRateLimiter() *ipRateLimiter {
-	return l
+	return limiterInstance
 }
 
 type ipRateLimiter struct {
@@ -58,7 +55,7 @@ func (i *ipRateLimiter) AddIP(ip string) *rate.Limiter {
 	return limiter
 }
 
-func (i *ipRateLimiter) Limiter(ip string) *rate.Limiter {
+func (i *ipRateLimiter) getLimiter(ip string) *rate.Limiter {
 	i.mu.Lock()
 
 	limiter, exists := i.ips[ip]
@@ -73,8 +70,8 @@ func (i *ipRateLimiter) Limiter(ip string) *rate.Limiter {
 	return limiter
 }
 
-func Limiter(ctx *gin.Context) {
-	limit := l.Limiter(ctx.RemoteIP())
+func (i *ipRateLimiter) Limiter(ctx *gin.Context) {
+	limit := limiterInstance.getLimiter(ctx.RemoteIP())
 
 	if !limit.Allow() {
 		commonstl.SendFailedResp(ctx, errorTooManyRequest, errors.New(errorTooManyRequest))

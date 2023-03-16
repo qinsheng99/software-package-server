@@ -19,6 +19,7 @@ func AddRouteForSoftwarePkgController(r *gin.RouterGroup, pkgService app.Softwar
 	}
 
 	m := middleware.UserChecking().CheckUser
+	l := middleware.IpRateLimiter().Limiter
 	r.POST("/v1/softwarepkg", m, ctl.ApplyNewPkg)
 	r.GET("/v1/softwarepkg", ctl.ListPkgs)
 	r.GET("/v1/softwarepkg/:id", ctl.Get)
@@ -27,7 +28,7 @@ func AddRouteForSoftwarePkgController(r *gin.RouterGroup, pkgService app.Softwar
 	r.PUT("/v1/softwarepkg/:id/review/reject", m, ctl.Reject)
 	r.PUT("/v1/softwarepkg/:id/review/abandon", m, ctl.Abandon)
 	r.POST("/v1/softwarepkg/:id/review/comment", m, ctl.NewReviewComment)
-	r.POST("/v1/softwarepkg/:id/review/comment/:cid/translate", m, ctl.TranslateReviewComment)
+	r.POST("/v1/softwarepkg/:id/review/comment/:cid/translate", m, l, ctl.TranslateReviewComment)
 }
 
 // ApplyNewPkg

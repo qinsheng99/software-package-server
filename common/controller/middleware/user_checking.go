@@ -3,9 +3,11 @@ package middleware
 import (
 	"errors"
 	"net/http"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/opensourceways/server-common-lib/utils"
+	"golang.org/x/time/rate"
 
 	commonstl "github.com/opensourceways/software-package-server/common/controller"
 	"github.com/opensourceways/software-package-server/softwarepkg/domain"
@@ -25,12 +27,20 @@ var instance *userCheckingMiddleware
 
 type Config struct {
 	UserInfoURL string `json:"user_info_url" required:"true"`
+	LimiterConfig
 }
 
 func Init(cfg *Config) {
 	instance = &userCheckingMiddleware{
 		client:      utils.NewHttpClient(3),
 		userInfoURL: cfg.UserInfoURL,
+	}
+
+	limiterInstance = &ipRateLimiter{
+		ips:   make(map[string]*rate.Limiter),
+		mu:    &sync.RWMutex{},
+		limit: rate.Limit(cfg.Limit),
+		burst: cfg.Burst,
 	}
 }
 
