@@ -2,21 +2,35 @@ package pkgciimpl
 
 import (
 	"bytes"
-	"net/http"
+	"fmt"
+	"text/template"
 
+	"github.com/opensourceways/robot-gitee-lib/client"
 	"github.com/opensourceways/server-common-lib/utils"
+	"github.com/sirupsen/logrus"
 
 	"github.com/opensourceways/software-package-server/softwarepkg/domain"
+	"github.com/opensourceways/software-package-server/softwarepkg/domain/dp"
+	localutils "github.com/opensourceways/software-package-server/utils"
 )
 
 var instance *pkgCIImpl
 
-func Init(cfg *Config) {
-	instance = &pkgCIImpl{
-		cli:      utils.NewHttpClient(3),
-		service:  cfg.CIService,
-		endpoint: cfg.CIEndpoint,
+func Init(cfg *Config) error {
+	tmpl, err := template.ParseFiles(cfg.PkgInfoTpl)
+	if err != nil {
+		return err
 	}
+
+	instance = &pkgCIImpl{
+		cli: client.NewClient(func() []byte {
+			return []byte(cfg.CreateCIPRToken)
+		}),
+		cfg:        *cfg,
+		pkgInfoTpl: tmpl,
+	}
+
+	return nil
 }
 
 func PkgCI() *pkgCIImpl {
@@ -24,43 +38,84 @@ func PkgCI() *pkgCIImpl {
 }
 
 type softwarePkgInfo struct {
-	PkgId     string `json:"pkg_id"`
-	PkgName   string `json:"pkg_name"`
-	Service   string `json:"service"`
-	SpecURL   string `json:"spec_url"`
-	SrcRPMURL string `json:"src_rpm_url"`
+	PkgId   string
+	PkgName string
 }
 
 // pkgCIImpl
 type pkgCIImpl struct {
-	cli      utils.HttpClient
-	service  string
-	endpoint string
+	cli        client.Client
+	cfg        Config
+	pkgInfoTpl *template.Template
 }
 
-func (impl *pkgCIImpl) SendTest(info *domain.SoftwarePkgBasicInfo) error {
-	source := &info.Application.SourceCode
-	v := softwarePkgInfo{
-		PkgId:     info.Id,
-		PkgName:   info.PkgName.PackageName(),
-		Service:   impl.service,
-		SpecURL:   source.SpecURL.URL(),
-		SrcRPMURL: source.SrcRPMURL.URL(),
-	}
+func (impl *pkgCIImpl) CreateCIPR(info *domain.SoftwarePkgBasicInfo) error {
+	branch := impl.branch(info.PkgName)
 
-	data, err := utils.JsonMarshal(v)
-	if err != nil {
+	if err := impl.loadFile(branch, info); err != nil {
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, impl.endpoint, bytes.NewReader(data))
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-
-	_, err = impl.cli.ForwardTo(req, nil)
+	_, err := impl.cli.CreatePullRequest(
+		impl.cfg.CIOrg,
+		impl.cfg.CIRepo,
+		info.PkgName.PackageName(),
+		info.PkgName.PackageName(),
+		branch,
+		"master",
+		true,
+	)
 
 	return err
+}
+
+func (impl *pkgCIImpl) loadFile(branch string, info *domain.SoftwarePkgBasicInfo) error {
+	content, err := impl.genPkgInfo(&softwarePkgInfo{
+		PkgId:   info.Id,
+		PkgName: info.PkgName.PackageName(),
+	})
+	if err != nil {
+		return err
+	}
+	params := []string{
+		impl.cfg.CIScript,
+		impl.cfg.CIUser,
+		impl.cfg.CreateCIPRToken,
+		impl.cfg.CIEmail,
+		branch,
+		impl.cfg.CIOrg,
+		impl.cfg.CIRepo,
+		fmt.Sprintf("%s/pkginfo.yaml", info.PkgName.PackageName()),
+		content,
+		info.Application.SourceCode.SpecURL.URL(),
+		info.Application.SourceCode.SrcRPMURL.URL(),
+	}
+
+	return impl.runcmd(params)
+}
+
+func (impl *pkgCIImpl) runcmd(params []string) error {
+	out, err, _ := utils.RunCmd(params...)
+	if err != nil {
+		logrus.Errorf(
+			"run create pull request shell, err=%s, out=%s, params=%v",
+			err.Error(), out, params[:len(params)-1],
+		)
+	}
+
+	return err
+}
+
+func (impl *pkgCIImpl) branch(pkg dp.PackageName) string {
+	return fmt.Sprintf("%d-%s", localutils.Now(), pkg.PackageName())
+}
+
+func (impl *pkgCIImpl) genPkgInfo(data *softwarePkgInfo) (string, error) {
+	buf := new(bytes.Buffer)
+
+	if err := impl.pkgInfoTpl.Execute(buf, data); err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
 }

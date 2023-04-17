@@ -106,7 +106,11 @@ func main() {
 	}
 
 	// ci
-	pkgciimpl.Init(&cfg.PkgCI)
+	if err = pkgciimpl.Init(&cfg.PkgCI); err != nil {
+		logrus.Errorf("init ci failed, err:%s", err.Error())
+
+		return
+	}
 
 	// mq
 	if err = kafka.Init(&cfg.Kafka, log); err != nil {

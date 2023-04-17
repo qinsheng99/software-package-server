@@ -55,15 +55,15 @@ func (s softwarePkgMessageService) HandlePkgCIChecking(cmd CmdToHandlePkgCICheck
 		return err
 	}
 
-	if err := pkg.HandleCIChecking(); err != nil {
+	if err = pkg.HandleCIChecking(); err != nil {
 		return err
 	}
 
-	if err := s.ci.SendTest(&pkg); err != nil {
+	if err = s.ci.CreateCIPR(&pkg); err != nil {
 		return err
 	}
 
-	if err := s.repo.SaveSoftwarePkg(&pkg, version); err != nil {
+	if err = s.repo.SaveSoftwarePkg(&pkg, version); err != nil {
 		logrus.Errorf(
 			"save pkg failed when %s, err:%s",
 			cmd.logString(), err.Error(),
