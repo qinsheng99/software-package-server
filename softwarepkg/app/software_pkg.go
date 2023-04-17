@@ -1,8 +1,6 @@
 package app
 
 import (
-	"errors"
-
 	"github.com/sirupsen/logrus"
 
 	commonrepo "github.com/opensourceways/software-package-server/common/domain/repository"
@@ -75,12 +73,12 @@ func (s *softwarePkgService) ApplyNewPkg(cmd *CmdToApplyNewSoftwarePkg) (
 	dto NewSoftwarePkgDTO, code string, err error,
 ) {
 	v := domain.NewSoftwarePkg(&cmd.Importer, cmd.PkgName, &cmd.Application)
-	if s.pkgService.IsPkgExisted(cmd.PkgName) {
-		err = errors.New("software package already existed")
-		code = errorSoftwarePkgExists
-
-		return
-	}
+	//if s.pkgService.IsPkgExisted(cmd.PkgName) {
+	//	err = errors.New("software package already existed")
+	//	code = errorSoftwarePkgExists
+	//
+	//	return
+	//}
 
 	if err = s.repo.AddSoftwarePkg(&v); err != nil {
 		if commonrepo.IsErrorDuplicateCreating(err) {
