@@ -52,7 +52,7 @@ type pkgCIImpl struct {
 func (impl *pkgCIImpl) CreateCIPR(info *domain.SoftwarePkgBasicInfo) error {
 	branch := impl.branch(info.PkgName)
 
-	if err := impl.loadFile(branch, info); err != nil {
+	if err := impl.createBranch(branch, info); err != nil {
 		return err
 	}
 
@@ -60,7 +60,7 @@ func (impl *pkgCIImpl) CreateCIPR(info *domain.SoftwarePkgBasicInfo) error {
 		impl.cfg.CIOrg,
 		impl.cfg.CIRepo,
 		info.PkgName.PackageName(),
-		info.PkgName.PackageName(),
+		fmt.Sprintf("add package: %s ci record", info.PkgName.PackageName()),
 		branch,
 		"master",
 		true,
@@ -69,7 +69,7 @@ func (impl *pkgCIImpl) CreateCIPR(info *domain.SoftwarePkgBasicInfo) error {
 	return err
 }
 
-func (impl *pkgCIImpl) loadFile(branch string, info *domain.SoftwarePkgBasicInfo) error {
+func (impl *pkgCIImpl) createBranch(branch string, info *domain.SoftwarePkgBasicInfo) error {
 	content, err := impl.genPkgInfo(&softwarePkgInfo{
 		PkgId:   info.Id,
 		PkgName: info.PkgName.PackageName(),
@@ -85,7 +85,7 @@ func (impl *pkgCIImpl) loadFile(branch string, info *domain.SoftwarePkgBasicInfo
 		branch,
 		impl.cfg.CIOrg,
 		impl.cfg.CIRepo,
-		fmt.Sprintf("%s/pkginfo.yaml", info.PkgName.PackageName()),
+		"pkginfo.yaml",
 		content,
 		info.Application.SourceCode.SpecURL.URL(),
 		info.Application.SourceCode.SrcRPMURL.URL(),
@@ -107,7 +107,7 @@ func (impl *pkgCIImpl) runcmd(params []string) error {
 }
 
 func (impl *pkgCIImpl) branch(pkg dp.PackageName) string {
-	return fmt.Sprintf("%d-%s", localutils.Now(), pkg.PackageName())
+	return fmt.Sprintf("%s-%d", pkg.PackageName(), localutils.Now())
 }
 
 func (impl *pkgCIImpl) genPkgInfo(data *softwarePkgInfo) (string, error) {

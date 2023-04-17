@@ -16,7 +16,7 @@ func (cfg *Config) SetDefault() {
 	}
 
 	if cfg.CIEmail == "" {
-		cfg.CIScript = "software-pkg-robot@openeuler.org"
+		cfg.CIEmail = "software-pkg-robot@openeuler.org"
 	}
 
 	if cfg.PkgInfoTpl == "" {
