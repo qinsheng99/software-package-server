@@ -40,6 +40,7 @@ func PkgCI() *pkgCIImpl {
 type softwarePkgInfo struct {
 	PkgId   string
 	PkgName string
+	Service string
 }
 
 // pkgCIImpl
@@ -73,6 +74,7 @@ func (impl *pkgCIImpl) createBranch(branch string, info *domain.SoftwarePkgBasic
 	content, err := impl.genPkgInfo(&softwarePkgInfo{
 		PkgId:   info.Id,
 		PkgName: info.PkgName.PackageName(),
+		Service: impl.cfg.CIService,
 	})
 	if err != nil {
 		return err
