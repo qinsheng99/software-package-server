@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"text/template"
+	"time"
 
 	"github.com/opensourceways/robot-gitee-lib/client"
 	"github.com/opensourceways/server-common-lib/utils"
@@ -57,17 +58,33 @@ func (impl *pkgCIImpl) CreateCIPR(info *domain.SoftwarePkgBasicInfo) error {
 		return err
 	}
 
-	_, err := impl.cli.CreatePullRequest(
+	pull, err := impl.cli.CreatePullRequest(
 		impl.cfg.CIOrg,
 		impl.cfg.CIRepo,
 		info.PkgName.PackageName(),
-		fmt.Sprintf("add package: %s ci record", info.PkgName.PackageName()),
+		info.PkgName.PackageName(),
 		branch,
-		"master",
+		impl.cfg.CreateBranch,
 		true,
 	)
+	if err != nil {
+		return err
+	}
 
-	return err
+	return impl.createPRComment(pull.Number)
+}
+
+func (impl *pkgCIImpl) createPRComment(id int32) (err error) {
+	time.Sleep(time.Second * 10)
+	if err = impl.cli.CreatePRComment(
+		impl.cfg.CIOrg,
+		impl.cfg.CIRepo, id,
+		impl.cfg.Comment,
+	); err != nil {
+		logrus.Errorf("create pr %d comment failed, err:%s", id, err.Error())
+	}
+
+	return
 }
 
 func (impl *pkgCIImpl) createBranch(branch string, info *domain.SoftwarePkgBasicInfo) error {
@@ -79,6 +96,7 @@ func (impl *pkgCIImpl) createBranch(branch string, info *domain.SoftwarePkgBasic
 	if err != nil {
 		return err
 	}
+
 	params := []string{
 		impl.cfg.CIScript,
 		impl.cfg.CIUser,
