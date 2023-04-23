@@ -1,3 +1,0 @@
-pkg_id: {{.PkgId}}
-pkg_name: {{.PkgName}}
-service: {{.Service}}

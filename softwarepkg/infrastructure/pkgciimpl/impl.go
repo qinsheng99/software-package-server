@@ -1,14 +1,12 @@
 package pkgciimpl
 
 import (
-	"bytes"
 	"fmt"
-	"text/template"
-	"time"
 
 	"github.com/opensourceways/robot-gitee-lib/client"
 	"github.com/opensourceways/server-common-lib/utils"
 	"github.com/sirupsen/logrus"
+	"sigs.k8s.io/yaml"
 
 	"github.com/opensourceways/software-package-server/softwarepkg/domain"
 	"github.com/opensourceways/software-package-server/softwarepkg/domain/dp"
@@ -18,17 +16,11 @@ import (
 var instance *pkgCIImpl
 
 func Init(cfg *Config) error {
-	tmpl, err := template.ParseFiles(cfg.PkgInfoTpl)
-	if err != nil {
-		return err
-	}
-
 	instance = &pkgCIImpl{
 		cli: client.NewClient(func() []byte {
 			return []byte(cfg.CreateCIPRToken)
 		}),
-		cfg:        *cfg,
-		pkgInfoTpl: tmpl,
+		cfg: *cfg,
 	}
 
 	return nil
@@ -39,16 +31,19 @@ func PkgCI() *pkgCIImpl {
 }
 
 type softwarePkgInfo struct {
-	PkgId   string
-	PkgName string
-	Service string
+	PkgId   string `json:"pkg_id"`
+	PkgName string `json:"pkg_name"`
+	Service string `json:"service"`
+}
+
+func (s *softwarePkgInfo) toYaml() ([]byte, error) {
+	return yaml.Marshal(s)
 }
 
 // pkgCIImpl
 type pkgCIImpl struct {
-	cli        client.Client
-	cfg        Config
-	pkgInfoTpl *template.Template
+	cli client.Client
+	cfg Config
 }
 
 func (impl *pkgCIImpl) CreateCIPR(info *domain.SoftwarePkgBasicInfo) error {
@@ -75,7 +70,6 @@ func (impl *pkgCIImpl) CreateCIPR(info *domain.SoftwarePkgBasicInfo) error {
 }
 
 func (impl *pkgCIImpl) createPRComment(id int32) (err error) {
-	time.Sleep(time.Second * 10)
 	if err = impl.cli.CreatePRComment(
 		impl.cfg.CIOrg,
 		impl.cfg.CIRepo, id,
@@ -88,25 +82,27 @@ func (impl *pkgCIImpl) createPRComment(id int32) (err error) {
 }
 
 func (impl *pkgCIImpl) createBranch(branch string, info *domain.SoftwarePkgBasicInfo) error {
-	content, err := impl.genPkgInfo(&softwarePkgInfo{
+	v := &softwarePkgInfo{
 		PkgId:   info.Id,
 		PkgName: info.PkgName.PackageName(),
 		Service: impl.cfg.CIService,
-	})
+	}
+
+	content, err := v.toYaml()
 	if err != nil {
 		return err
 	}
 
 	params := []string{
 		impl.cfg.CIScript,
-		impl.cfg.CIUser,
+		impl.cfg.User,
 		impl.cfg.CreateCIPRToken,
-		impl.cfg.CIEmail,
+		impl.cfg.Email,
 		branch,
 		impl.cfg.CIOrg,
 		impl.cfg.CIRepo,
 		"pkginfo.yaml",
-		content,
+		string(content),
 		info.Application.SourceCode.SpecURL.URL(),
 		info.Application.SourceCode.SrcRPMURL.URL(),
 	}
@@ -128,14 +124,4 @@ func (impl *pkgCIImpl) runcmd(params []string) error {
 
 func (impl *pkgCIImpl) branch(pkg dp.PackageName) string {
 	return fmt.Sprintf("%s-%d", pkg.PackageName(), localutils.Now())
-}
-
-func (impl *pkgCIImpl) genPkgInfo(data *softwarePkgInfo) (string, error) {
-	buf := new(bytes.Buffer)
-
-	if err := impl.pkgInfoTpl.Execute(buf, data); err != nil {
-		return "", err
-	}
-
-	return buf.String(), nil
 }
