@@ -59,7 +59,7 @@ func (s softwarePkgMessageService) HandlePkgCIChecking(cmd CmdToHandlePkgCICheck
 		return err
 	}
 
-	if err = s.ci.CreateCIPR(&pkg); err != nil {
+	if err = s.ci.SendTest(&pkg); err != nil {
 		return err
 	}
 

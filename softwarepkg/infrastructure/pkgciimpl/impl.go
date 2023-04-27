@@ -15,15 +15,13 @@ import (
 
 var instance *pkgCIImpl
 
-func Init(cfg *Config) error {
+func Init(cfg *Config) {
 	instance = &pkgCIImpl{
 		cli: client.NewClient(func() []byte {
 			return []byte(cfg.CreateCIPRToken)
 		}),
 		cfg: *cfg,
 	}
-
-	return nil
 }
 
 func PkgCI() *pkgCIImpl {
@@ -46,7 +44,7 @@ type pkgCIImpl struct {
 	cfg Config
 }
 
-func (impl *pkgCIImpl) CreateCIPR(info *domain.SoftwarePkgBasicInfo) error {
+func (impl *pkgCIImpl) SendTest(info *domain.SoftwarePkgBasicInfo) error {
 	branch := impl.branch(info.PkgName)
 
 	if err := impl.createBranch(branch, info); err != nil {
