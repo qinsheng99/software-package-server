@@ -55,7 +55,7 @@ commit() {
 
     git checkout $master_branch
 
-    git branch -D $branch_name
+    git branch -D "$branch_name"
 }
 
 cd $repo_dir
