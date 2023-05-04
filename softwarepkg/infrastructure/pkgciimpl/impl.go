@@ -10,7 +10,6 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/opensourceways/software-package-server/softwarepkg/domain"
-	"github.com/opensourceways/software-package-server/softwarepkg/domain/dp"
 	"github.com/opensourceways/software-package-server/utils"
 )
 
@@ -73,7 +72,7 @@ type pkgCIImpl struct {
 }
 
 func (impl *pkgCIImpl) SendTest(info *domain.SoftwarePkgBasicInfo) error {
-	branch := impl.branch(info.PkgName)
+	branch := fmt.Sprintf("%s-%d", info.PkgName.PackageName(), utils.Now())
 	if err := impl.createBranch(info, branch); err != nil {
 		return err
 	}
@@ -151,8 +150,4 @@ func (impl *pkgCIImpl) runcmd(params []string) error {
 	}
 
 	return err
-}
-
-func (impl *pkgCIImpl) branch(pkg dp.PackageName) string {
-	return fmt.Sprintf("%s-%d", pkg.PackageName(), utils.Now())
 }
