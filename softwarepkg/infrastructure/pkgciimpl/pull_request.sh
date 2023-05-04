@@ -14,13 +14,13 @@ new_branch() {
     git checkout -- .
     git clean -fd
 
-    git checkout $master_branch
+    git checkout "$master_branch"
 
-    git fetch origin $master_branch
-    git rebase origin/$master_branch
+    git fetch origin "$master_branch"
+    git rebase origin/"$master_branch"
 
     set +e
-    git rev-parse --verify $branch 2>/dev/null
+    git rev-parse --verify "$branch_name" 2>/dev/null
     has=$?
     set -e
 
@@ -53,12 +53,12 @@ commit() {
 
     git push origin "$branch_name"
 
-    git checkout $master_branch
+    git checkout "$master_branch"
 
     git branch -D "$branch_name"
 }
 
-cd $repo_dir
+cd "$repo_dir"
 
 new_branch
 
