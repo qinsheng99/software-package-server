@@ -17,6 +17,10 @@ COPY  --from=BUILDER /go/src/github.com/opensourceways/software-package-server/d
 COPY softwarepkg/infrastructure/pkgciimpl/clone_repo.sh /opt/app/clone_repo.sh
 COPY softwarepkg/infrastructure/pkgciimpl/pull_request.sh /opt/app/pull_request.sh
 
-RUN chmod +x /opt/app/pull_request.sh clone_repo.sh && apk update && apk add --no-cache git libc6-compat curl
+RUN chmod +x /opt/app/pull_request.sh
+
+RUN chmod +x /opt/app/clone_repo.sh
+
+RUN apk update && apk add --no-cache git libc6-compat curl
 
 ENTRYPOINT ["/opt/app/message-server"]
