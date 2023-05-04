@@ -3,15 +3,15 @@ package pkgciimpl
 import (
 	"fmt"
 	"io/ioutil"
-	"time"
 
 	"github.com/opensourceways/robot-gitee-lib/client"
-	"github.com/opensourceways/server-common-lib/utils"
+	libutils "github.com/opensourceways/server-common-lib/utils"
 	"github.com/sirupsen/logrus"
 	"sigs.k8s.io/yaml"
 
 	"github.com/opensourceways/software-package-server/softwarepkg/domain"
 	"github.com/opensourceways/software-package-server/softwarepkg/domain/dp"
+	"github.com/opensourceways/software-package-server/utils"
 )
 
 var instance *pkgCIImpl
@@ -45,7 +45,7 @@ func cloneRepo(cfg *Config) error {
 		cfg.CIRepo.cloneURL(user),
 	}
 
-	_, err, _ := utils.RunCmd(params...)
+	_, err, _ := libutils.RunCmd(params...)
 
 	return err
 }
@@ -142,7 +142,7 @@ func (impl *pkgCIImpl) createBranch(info *domain.SoftwarePkgBasicInfo, branch st
 }
 
 func (impl *pkgCIImpl) runcmd(params []string) error {
-	out, err, _ := utils.RunCmd(params...)
+	out, err, _ := libutils.RunCmd(params...)
 	if err != nil {
 		logrus.Errorf(
 			"run create pull request shell, err=%s, out=%s, params=%v",
@@ -154,5 +154,5 @@ func (impl *pkgCIImpl) runcmd(params []string) error {
 }
 
 func (impl *pkgCIImpl) branch(pkg dp.PackageName) string {
-	return fmt.Sprintf("%s-%d", pkg.PackageName(), time.Now().Unix())
+	return fmt.Sprintf("%s-%d", pkg.PackageName(), utils.Now())
 }
