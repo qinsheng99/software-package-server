@@ -20,9 +20,10 @@ func (cmd *CmdToHandlePkgCIChecking) logString() string {
 
 // CmdToHandlePkgCIChecked
 type CmdToHandlePkgCIChecked struct {
-	PkgId   string
-	Detail  string
-	Success bool
+	PkgId    string
+	Detail   string
+	Success  bool
+	PRNumber int32
 }
 
 func (cmd *CmdToHandlePkgCIChecked) logString() string {
