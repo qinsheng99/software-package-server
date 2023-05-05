@@ -23,7 +23,7 @@ type CmdToHandlePkgCIChecked struct {
 	PkgId    string
 	Detail   string
 	Success  bool
-	PRNumber int32
+	PRNumber int
 }
 
 func (cmd *CmdToHandlePkgCIChecked) logString() string {

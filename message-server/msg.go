@@ -19,7 +19,7 @@ func cmdToHandlePkgCIChecking(data []byte) (cmd app.CmdToHandlePkgCIChecking, er
 type msgToHandlePkgCIChecked struct {
 	PkgId    string `json:"pkg_id"`
 	Detail   string `json:"detail"`
-	PRNumber int32  `json:"number"`
+	PRNumber int    `json:"number"`
 	Success  bool   `json:"success"`
 }
 

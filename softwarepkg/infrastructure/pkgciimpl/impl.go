@@ -93,8 +93,8 @@ func (impl *pkgCIImpl) SendTest(info *domain.SoftwarePkgBasicInfo) error {
 	return impl.createPRComment(pr.Number)
 }
 
-func (impl *pkgCIImpl) ClosePR(id int32) error {
-	return impl.cli.ClosePR(impl.cfg.CIRepo.Org, impl.cfg.CIRepo.Repo, id)
+func (impl *pkgCIImpl) ClosePR(id int) error {
+	return impl.cli.ClosePR(impl.cfg.CIRepo.Org, impl.cfg.CIRepo.Repo, int32(id))
 }
 
 func (impl *pkgCIImpl) createPRComment(id int32) error {
