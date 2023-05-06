@@ -1,8 +1,11 @@
 package repositoryimpl
 
 import (
+	"encoding/json"
+
 	"github.com/google/uuid"
 	"github.com/lib/pq"
+	"gorm.io/gorm"
 	"gorm.io/plugin/optimisticlock"
 
 	"github.com/opensourceways/software-package-server/softwarepkg/domain"
@@ -16,10 +19,11 @@ const (
 	fieldVersion         = "version"
 	fieldImporter        = "importer"
 	fieldAppliedAt       = "applied_at"
+	fieldUpdatedAt       = "updated_at"
+	fieldApprovedby      = "approvedby"
+	fieldRejectedby      = "rejectedby"
 	fieldPackageName     = "package_name"
 	fieldPackagePlatform = "package_platform"
-
-	zeroPRNum = -1
 )
 
 func (s softwarePkgBasic) toSoftwarePkgBasicDO(pkg *domain.SoftwarePkgBasicInfo, do *SoftwarePkgBasicDO) (err error) {
@@ -50,10 +54,6 @@ func (s softwarePkgBasic) toSoftwarePkgBasicDO(pkg *domain.SoftwarePkgBasicInfo,
 		RejectedBy:      toStringArray(pkg.RejectedBy),
 	}
 
-	if do.CIPRNum == 0 {
-		do.CIPRNum = zeroPRNum
-	}
-
 	if pkg.RepoLink != nil {
 		do.RepoLink = pkg.RepoLink.URL()
 	}
@@ -65,28 +65,66 @@ func (s softwarePkgBasic) toSoftwarePkgBasicDO(pkg *domain.SoftwarePkgBasicInfo,
 	return
 }
 
+func (do *SoftwarePkgBasicDO) toApprovedByString() string {
+	if v, err := do.ApprovedBy.Value(); err == nil {
+		if s, ok := v.(string); ok {
+			return s
+		}
+	}
+
+	return "{}"
+}
+
+func (do *SoftwarePkgBasicDO) toRejectedByString() string {
+	if v, err := do.RejectedBy.Value(); err == nil {
+		if s, ok := v.(string); ok {
+			return s
+		}
+	}
+
+	return "{}"
+}
+
 type SoftwarePkgBasicDO struct {
 	// must set "uuid" as the name of column
-	Id              uuid.UUID              `gorm:"column:uuid;type:uuid"`
-	PackageName     string                 `gorm:"column:package_name"`
-	Importer        string                 `gorm:"column:importer"`
-	ImporterEmail   string                 `gorm:"column:importer_email"`
-	RepoLink        string                 `gorm:"column:repo_link"`
-	Phase           string                 `gorm:"column:phase"`
-	CIPRNum         int                    `gorm:"column:ci_pr_num"`
-	CIStatus        string                 `gorm:"column:ci_status"`
-	SpecURL         string                 `gorm:"column:spec_url"`
-	SrcRPMURL       string                 `gorm:"column:src_rpm_url"`
-	PackageDesc     string                 `gorm:"column:package_desc"`
-	PackagePlatform string                 `gorm:"column:package_platform"`
-	RelevantPR      string                 `gorm:"column:relevant_pr"`
-	Sig             string                 `gorm:"column:sig"`
-	ReasonToImport  string                 `gorm:"column:reason_to_import"`
-	ApprovedBy      pq.StringArray         `gorm:"column:approvedby;type:text[];default:'{}'"`
-	RejectedBy      pq.StringArray         `gorm:"column:rejectedby;type:text[];default:'{}'"`
-	AppliedAt       int64                  `gorm:"column:applied_at"`
-	UpdatedAt       int64                  `gorm:"column:updated_at"`
-	Version         optimisticlock.Version `gorm:"column:version"`
+	Id              uuid.UUID              `gorm:"column:uuid;type:uuid"                           json:"-"`
+	Sig             string                 `gorm:"column:sig"                                      json:"sig"`
+	Phase           string                 `gorm:"column:phase"                                    json:"phase"`
+	SpecURL         string                 `gorm:"column:spec_url"                                 json:"spec_url"`
+	Importer        string                 `gorm:"column:importer"                                 json:"importer"`
+	RepoLink        string                 `gorm:"column:repo_link"                                json:"repo_link"`
+	CIStatus        string                 `gorm:"column:ci_status"                                json:"ci_status"`
+	SrcRPMURL       string                 `gorm:"column:src_rpm_url"                              json:"src_rpm_url"`
+	RelevantPR      string                 `gorm:"column:relevant_pr"                              json:"relevant_pr"`
+	PackageName     string                 `gorm:"column:package_name"                             json:"package_name"`
+	PackageDesc     string                 `gorm:"column:package_desc"                             json:"package_desc"`
+	ImporterEmail   string                 `gorm:"column:importer_email"                           json:"importer_email"`
+	ReasonToImport  string                 `gorm:"column:reason_to_import"                         json:"reason_to_import"`
+	PackagePlatform string                 `gorm:"column:package_platform"                         json:"package_platform"`
+	CIPRNum         int                    `gorm:"column:ci_pr_num"                                json:"ci_pr_num"`
+	AppliedAt       int64                  `gorm:"column:applied_at"                               json:"applied_at"`
+	UpdatedAt       int64                  `gorm:"column:updated_at"                               json:"updated_at"`
+	Version         optimisticlock.Version `gorm:"column:version"                                  json:"-"`
+	ApprovedBy      pq.StringArray         `gorm:"column:approvedby;type:text[];default:'{}'"      json:"-"`
+	RejectedBy      pq.StringArray         `gorm:"column:rejectedby;type:text[];default:'{}'"      json:"-"`
+}
+
+func (do *SoftwarePkgBasicDO) toMap() (map[string]any, error) {
+	v, err := json.Marshal(do)
+	if err != nil {
+		return nil, err
+	}
+	var res map[string]interface{}
+	if err = json.Unmarshal(v, &res); err != nil {
+		return nil, err
+	}
+
+	res[fieldVersion] = gorm.Expr(fieldVersion+" + ?", 1)
+	res[fieldUpdatedAt] = utils.Now()
+	res[fieldApprovedby] = do.toApprovedByString()
+	res[fieldRejectedby] = do.toRejectedByString()
+
+	return res, err
 }
 
 func (do *SoftwarePkgBasicDO) toSoftwarePkgBasicInfo() (info domain.SoftwarePkgBasicInfo, err error) {
@@ -134,9 +172,7 @@ func (do *SoftwarePkgBasicDO) toSoftwarePkgBasicInfo() (info domain.SoftwarePkgB
 		return
 	}
 
-	if do.CIPRNum != zeroPRNum {
-		info.CI.PRNum = do.CIPRNum
-	}
+	info.CI.PRNum = do.CIPRNum
 
 	info.RejectedBy, err = do.toAccounts(do.RejectedBy)
 
