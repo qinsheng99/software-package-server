@@ -28,7 +28,7 @@ func (t operationLog) findOperationLogs(pid string) ([]domain.SoftwarePkgOperati
 		&dos,
 		postgresql.Pagination{},
 		[]postgresql.SortByColumn{
-			{Column: fieldCreatedAt, Ascend: true},
+			{Column: fieldCreatedAt},
 		},
 	)
 	if err != nil || len(dos) == 0 {
