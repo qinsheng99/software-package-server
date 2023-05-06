@@ -124,7 +124,7 @@ func (s *softwarePkgService) Approve(pid string, user *domain.User) (code string
 		s.notifyPkgApproved(&pkg)
 	}
 
-	s.addOperationLog(user.Account, dp.PackageOpreationLogActionApprove, pid)
+	s.addOperationLog(user.Account, dp.PackageOperationLogActionApprove, pid)
 
 	return
 }
@@ -165,7 +165,7 @@ func (s *softwarePkgService) Reject(pid string, user *domain.User) (code string,
 	}
 
 	if err = s.repo.SaveSoftwarePkg(&pkg, version); err == nil {
-		s.addOperationLog(user.Account, dp.PackageOpreationLogActionReject, pid)
+		s.addOperationLog(user.Account, dp.PackageOperationLogActionReject, pid)
 	}
 
 	return
@@ -186,7 +186,7 @@ func (s *softwarePkgService) Abandon(pid string, user *domain.User) (code string
 	}
 
 	if err == nil {
-		s.addOperationLog(user.Account, dp.PackageOpreationLogActionAbandon, pid)
+		s.addOperationLog(user.Account, dp.PackageOperationLogActionAbandon, pid)
 	}
 
 	return
@@ -226,7 +226,7 @@ func (s *softwarePkgService) RerunCI(pid string, user *domain.User) (code string
 
 		s.addCommentToRerunCI(pid)
 
-		s.addOperationLog(user.Account, dp.PackageOpreationLogActionResunci, pid)
+		s.addOperationLog(user.Account, dp.PackageOperationLogActionResunci, pid)
 	}
 
 	return

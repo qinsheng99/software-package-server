@@ -123,14 +123,14 @@ func (s *softwarePkgService) UpdateApplication(cmd *CmdToUpdateSoftwarePkgApplic
 	}
 
 	if err = s.repo.SaveSoftwarePkg(&pkg, version); err == nil {
-		s.addOperationLog(cmd.Importer.Account, dp.PackageOpreationLogActionUpdate, cmd.PkgId)
+		s.addOperationLog(cmd.Importer.Account, dp.PackageOperationLogActionUpdate, cmd.PkgId)
 	}
 
 	return "", err
 }
 
 func (s *softwarePkgService) addOperationLog(
-	user dp.Account, action dp.PackageOpreationLogAction, pkgId string,
+	user dp.Account, action dp.PackageOperationLogAction, pkgId string,
 ) {
 	log := domain.NewSoftwarePkgOperationLog(user, action, pkgId)
 

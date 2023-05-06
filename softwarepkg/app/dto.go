@@ -133,7 +133,7 @@ func toSoftwarePkgOperationLogDTO(v *domain.SoftwarePkgOperationLog) SoftwarePkg
 	return SoftwarePkgOperationLogDTO{
 		User:   v.User.Account(),
 		Time:   utils.ToDateTime(v.Time),
-		Action: v.Action.PackageOpreationLogAction(),
+		Action: v.Action.PackageOperationLogAction(),
 	}
 }
 

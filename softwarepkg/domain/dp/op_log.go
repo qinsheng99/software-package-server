@@ -1,27 +1,31 @@
 package dp
 
 const (
-	packageOpreationLogActionUpdate  = "update"
-	packageOpreationLogActionReject  = "reject"
-	packageOpreationLogActionApprove = "approve"
-	packageOpreationLogActionAbandon = "abandon"
-	packageOpreationLogActionRerunci = "rerunci"
+	packageOperationLogActionUpdate  = "update"
+	packageOperationLogActionReject  = "reject"
+	packageOperationLogActionApprove = "approve"
+	packageOperationLogActionAbandon = "abandon"
+	packageOperationLogActionRerunci = "rerunci"
 )
 
 var (
-	PackageOpreationLogActionUpdate  = packageOpreationLogAction(packageOpreationLogActionUpdate)
-	PackageOpreationLogActionReject  = packageOpreationLogAction(packageOpreationLogActionReject)
-	PackageOpreationLogActionApprove = packageOpreationLogAction(packageOpreationLogActionApprove)
-	PackageOpreationLogActionAbandon = packageOpreationLogAction(packageOpreationLogActionAbandon)
-	PackageOpreationLogActionResunci = packageOpreationLogAction(packageOpreationLogActionRerunci)
+	PackageOperationLogActionUpdate  = packageOperationLogAction(packageOperationLogActionUpdate)
+	PackageOperationLogActionReject  = packageOperationLogAction(packageOperationLogActionReject)
+	PackageOperationLogActionApprove = packageOperationLogAction(packageOperationLogActionApprove)
+	PackageOperationLogActionAbandon = packageOperationLogAction(packageOperationLogActionAbandon)
+	PackageOperationLogActionResunci = packageOperationLogAction(packageOperationLogActionRerunci)
 )
 
-type PackageOpreationLogAction interface {
-	PackageOpreationLogAction() string
+type PackageOperationLogAction interface {
+	PackageOperationLogAction() string
 }
 
-type packageOpreationLogAction string
+func NewPackageOperationLogAction(action string) PackageOperationLogAction {
+	return packageOperationLogAction(action)
+}
 
-func (p packageOpreationLogAction) PackageOpreationLogAction() string {
+type packageOperationLogAction string
+
+func (p packageOperationLogAction) PackageOperationLogAction() string {
 	return string(p)
 }

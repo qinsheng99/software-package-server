@@ -28,6 +28,9 @@ func NewSoftwarePkg(cfg *Config) repository.SoftwarePkg {
 		translationComment: translationComment{
 			postgresql.NewDBTable(cfg.Table.TranslationComment),
 		},
+		operationLog: operationLog{
+			postgresql.NewDBTable(cfg.Table.OperationLog),
+		},
 	}
 }
 
