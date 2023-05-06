@@ -1,11 +1,11 @@
 package repositoryimpl
 
 import (
+	"database/sql/driver"
 	"encoding/json"
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
-	"gorm.io/gorm"
 	"gorm.io/plugin/optimisticlock"
 
 	"github.com/opensourceways/software-package-server/softwarepkg/domain"
@@ -65,18 +65,21 @@ func (s softwarePkgBasic) toSoftwarePkgBasicDO(pkg *domain.SoftwarePkgBasicInfo,
 	return
 }
 
-func (do *SoftwarePkgBasicDO) toApprovedByString() string {
-	if v, err := do.ApprovedBy.Value(); err == nil {
-		if s, ok := v.(string); ok {
-			return s
-		}
+func (do *SoftwarePkgBasicDO) arrayFieldToString(typ string) string {
+	var (
+		v   driver.Value
+		err error
+	)
+	switch typ {
+	case fieldApprovedby:
+		v, err = do.ApprovedBy.Value()
+	case fieldRejectedby:
+		v, err = do.RejectedBy.Value()
+	default:
+		return "{}"
 	}
 
-	return "{}"
-}
-
-func (do *SoftwarePkgBasicDO) toRejectedByString() string {
-	if v, err := do.RejectedBy.Value(); err == nil {
+	if v != nil && err == nil {
 		if s, ok := v.(string); ok {
 			return s
 		}
@@ -114,15 +117,10 @@ func (do *SoftwarePkgBasicDO) toMap() (map[string]any, error) {
 	if err != nil {
 		return nil, err
 	}
-	var res map[string]interface{}
+	var res map[string]any
 	if err = json.Unmarshal(v, &res); err != nil {
 		return nil, err
 	}
-
-	res[fieldVersion] = gorm.Expr(fieldVersion+" + ?", 1)
-	res[fieldUpdatedAt] = utils.Now()
-	res[fieldApprovedby] = do.toApprovedByString()
-	res[fieldRejectedby] = do.toRejectedByString()
 
 	return res, err
 }
